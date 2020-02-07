@@ -8,6 +8,7 @@ import json
 import argparse
 import sys
 from string import ascii_letters, digits, ascii_uppercase
+from functools import reduce
 
 def get_corpus():
     """Import the list of easy words defined by Dale-Chall in the corpus.json
@@ -24,8 +25,11 @@ class DaleChallCalculator(object):
         self.difficult_words = 0
         self.easy_words = 0
         self.words = []
+        self.score = 0
+        self.asl = 0
 
     def get_average_sentence_length(self):
+        self.asl = self.word_count / self.sentence_count
         return self.word_count / self.sentence_count
 
     def get_word_count(self):
@@ -81,6 +85,8 @@ class DaleChallCalculator(object):
         difficult = []
         new = []
 
+        endings = ["s", "ies", "ing", "n", "ed", "ied", "ly", "er", "ier", "est", "iest"]
+
         for word in self.words:
             if word.lower() in get_corpus():
                 easy.append(word)
@@ -91,11 +97,36 @@ class DaleChallCalculator(object):
             elif word in new:
                 easy.append(word)
                 new.remove(word)
+            elif "-" in word:
+                temp = word.lower().split("-")
+                easy_hyphen = list(map(lambda a: a in get_corpus(), temp))
+                if (reduce(lambda a, b: a and b, easy_hyphen)):
+                    easy.append(word)
             else:
+                for ending in endings:
+                    if word.endswith(ending):
+                        if word[:(-1*len(ending))] in get_corpus():
+                            easy.append(word)
+                        else:
+                            continue
+                    else:
+                        continue
                 difficult.append(word)
                 new.append(word)
-        print("Easy words: " + str(easy))
-        print("Difficult words: " + str(difficult))
+
+        for word in difficult:
+            if word.lower() not in easy:
+                easy.append(word)
+                difficult.remove(word)
+        self.easy_words = len(easy)
+        self.difficult_words = len(difficult)
+        return easy, difficult
+
+    def run_calculation(self):
+        percentage = self.difficult_words / self.word_count * 100
+        self.score = (0.0496 * self.asl) + (0.1579 * percentage) + 3.6365
+        return self.score
+    
     def calculate(self):
         results = {}
         results['stats'] = {}
@@ -105,7 +136,10 @@ class DaleChallCalculator(object):
         results['stats']['sentence_count'] = self.sentence_count
         results['stats']['word_count'] = self.get_word_count()
         results['stats']['average_sentence_length'] = self.get_average_sentence_length()
-        self.get_easy_words()
+        results['data']['easy_words'], results['data']['difficult_words'] = self.get_easy_words()
+        results['stats']['easy_words'] = self.easy_words
+        results['stats']['difficult_words'] = self.difficult_words
+        results['stats']['raw_score'] = self.run_calculation()
         return results
 
 def create_arguments():
