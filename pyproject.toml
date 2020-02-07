@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "dalechall"
+version = "0.1.0"
+description = "A simple Dale Chall score calculator"
+authors = ["Marquis Kurt <software@marquiskurt.net>"]
+license = "MPL-2.0"
+
+[tool.poetry.dependencies]
+python = "^2.7"
+pyside2 = "^5.14.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
