@@ -1,0 +1,22 @@
+{
+    "stats": {
+        "sentence_count": 11,
+        "word_count": 252,
+        "average_sentence_length": 22.90909090909091
+    },
+    "data": {
+        "sentences": [
+            "Tech has made many promises.",
+            "Silicon Valley constantly seeks to improve our lives, releasing devices and services that seek to optimize our work and heighten our play.",
+            "It has pledged to solve global challenges, with an almost fanatical belief in the power of code to solve the thorniest issues of our time, from the political to the economic to the environmental.",
+            "It is, to a small but very powerful segment of society, the force most responsible for the transformation of our society.",
+            "The reality is that though technology has provided us with many new tools, the industry has also been minimally transparent on how it recognizes, addresses, and takes responsibility for myriad ethical issues that have arisen from the widespread adoption of its products and services.",
+            "The ethical issues facing the tech industry are abundant — military contracts, invasive data mining, biased algorithms, inhumane warehouse conditions, racist facial recognition software, and more.",
+            "Addressing ethical issues in tech can be overwhelming for students interested in working in tech.",
+            "But change in the industry is not impossible.",
+            "And it is, increasingly, necessary.",
+            "The first step is recognizing that those who build tech have always faced ethical challenges and that all tech workers, from warehouse workers to software developers, have always been at the forefront of organizing for change.",
+            "By learning from the history of tech worker organizing and understanding the tactics used by tech workers today, students entering the tech industry can be empowered to improve the future of tech and the future of society."
+        ]
+    }
+}
