@@ -1,5 +1,7 @@
 # Dale.py
 
+[![MPL](https://img.shields.io/github/license/alicerunsonfedora/dalechall)](LICENSE.txt) 
+
 A quick, dirty implementation of the Dale Chall readability test.
 
 ## Usage
