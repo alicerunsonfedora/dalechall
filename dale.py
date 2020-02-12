@@ -259,6 +259,16 @@ if __name__ == "__main__":
     
     result = calc.calculate()
 
+    # Print our test results.
+    print("Here is a summary of your text sample:\n")
+    print("Total sentence count: %s" % (result["stats"]["sentence_count"]))
+    print("Total word count: %s" % (result["stats"]["word_count"]))
+    print("Total difficult word count: %s" % (result["stats"]["difficult_words"]))
+    print("Raw score: %s" % (result["stats"]["raw_score"]))
+    print("\nTo figure out the grade level, refer to the grade chart.")
+    print("Note: Results may not be accurate. To get a better understanding of the calculations,\
+        \nrun this tool again with --export-data.")
+
     # Make the JSON data file if requested.
     if args.export_data:
         with open('result.json', 'w+') as out:
