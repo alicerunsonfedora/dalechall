@@ -4,6 +4,7 @@
 # (C) 2020 Marquis Kurt. All rights reserved.
 #
 
+import os
 import json
 import argparse
 import sys
@@ -13,8 +14,15 @@ from functools import reduce
 def get_corpus():
     """Import the list of easy words defined by Dale-Chall in the corpus.json
     file."""
-    with open('corpus.json', 'r') as corpus_file:
+    with open(os.getcwd() + '/data/corpus.json', 'r') as corpus_file:
         return json.load(corpus_file)
+
+def get_scrabble():
+    """Import the Scrabble Tournament Word List (TWL06) and turn it into a list
+    of words, lowercased."""
+    with open(os.getcwd() + "/data/scrabble.json", 'r') as scrabble_file:
+        json_data = json.load(scrabble_file)
+        return list(map(lambda e: e.lower(), json_data))
 
 class DaleChallCalculator(object):
 
@@ -25,8 +33,12 @@ class DaleChallCalculator(object):
         self.difficult_words = 0
         self.easy_words = 0
         self.words = []
+        self.sentences = []
         self.score = 0
         self.asl = 0
+        self.corpus = get_corpus()
+        self.scrabble_words = get_scrabble()
+        self.percentage = 0
 
     def get_average_sentence_length(self):
         self.asl = self.word_count / self.sentence_count
@@ -78,6 +90,7 @@ class DaleChallCalculator(object):
                 current_sentence += current_character
         
         self.sentence_count = len(sentences)
+        self.sentences = sentences
         return sentences
 
     def get_easy_words(self):
@@ -88,7 +101,7 @@ class DaleChallCalculator(object):
         endings = ["s", "ies", "ing", "n", "ed", "ied", "ly", "er", "ier", "est", "iest"]
 
         for word in self.words:
-            if word.lower() in get_corpus():
+            if word.lower() in self.corpus:
                 easy.append(word)
             elif word.isdigit():
                 easy.append(word)
@@ -99,13 +112,13 @@ class DaleChallCalculator(object):
                 new.remove(word)
             elif "-" in word:
                 temp = word.lower().split("-")
-                easy_hyphen = list(map(lambda a: a in get_corpus(), temp))
+                easy_hyphen = list(map(lambda a: a in self.corpus, temp))
                 if (reduce(lambda a, b: a and b, easy_hyphen)):
                     easy.append(word)
             else:
                 for ending in endings:
                     if word.endswith(ending):
-                        if word[:(-1*len(ending))] in get_corpus():
+                        if word[:(-1*len(ending))] in self.corpus:
                             easy.append(word)
                         else:
                             continue
@@ -114,17 +127,31 @@ class DaleChallCalculator(object):
                 difficult.append(word)
                 new.append(word)
 
+        word_matrix = list(map(lambda a: a.split(" "), self.sentences))
+        first_words = list(map(lambda a: a[0], word_matrix))
+
         for word in difficult:
-            if word.lower() not in easy:
+            if word[0] in ascii_uppercase:
+                lower_word = word.lower()
+
+                if lower_word in easy or lower_word in easy:
+                    continue
+
+                elif word in first_words:
+                    if word in self.scrabble_words:
+                        continue
+
                 easy.append(word)
                 difficult.remove(word)
+        
         self.easy_words = len(easy)
         self.difficult_words = len(difficult)
+        
         return easy, difficult
 
     def run_calculation(self):
-        percentage = self.difficult_words / self.word_count * 100
-        self.score = (0.0496 * self.asl) + (0.1579 * percentage) + 3.6365
+        self.percentage = (float(self.difficult_words) / float(self.word_count)) * 100
+        self.score = (0.0496 * self.asl) + (0.1579 * self.percentage) + 3.6365
         return self.score
     
     def calculate(self):
@@ -140,6 +167,7 @@ class DaleChallCalculator(object):
         results['stats']['easy_words'] = self.easy_words
         results['stats']['difficult_words'] = self.difficult_words
         results['stats']['raw_score'] = self.run_calculation()
+        results['stats']['difficult_word_percentage'] = self.percentage
         return results
 
 def create_arguments():
