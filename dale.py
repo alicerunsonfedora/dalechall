@@ -29,7 +29,9 @@ def get_scrabble():
         return list(map(lambda e: e.lower(), json_data))
 
 class DaleChallCalculator(object):
-
+    """The primary class responsible for calculating the readability score of
+    a given text."""
+    
     def __init__(self):
         self.text = ""
         self.word_count = 0
@@ -45,31 +47,50 @@ class DaleChallCalculator(object):
         self.percentage = 0
 
     def get_average_sentence_length(self):
+        """Get the average sentence length by dividing the word count
+        but the sentence count."""
+
+        # If this wasn't calculated already, calculate it now.
+        if self.sentence_count == 0 and self.word_count == 0:
+            self.get_sentence_count()
+            self.get_word_count()
+        
+        # Store the ASL in our class
         self.asl = self.word_count / self.sentence_count
-        return self.word_count / self.sentence_count
+        return self.asl
 
     def get_word_count(self):
+        """Get the count of words."""
         words = []
         texts = list(self.text)
         current_character = ""
         current_word = ""
 
+        # Create an acceptable list of characters for a word.
+        acceptable = ascii_letters + digits + "'" + "-"
+
+        # Iterate through every character and create the word manually.
         while len(texts) > 0:
+            # Grab the current character.
             current_character = texts.pop(0)
 
-            acceptable = ascii_letters + digits + "'" + "-"
-
+            # If the character is an unacceptable character, treat it as the
+            # end of the word and push this word onto the list.
             if current_character not in acceptable:
                 words.append(current_word)
                 current_word = ""
             else:
+                # Otherwise, just add the letter to the word.
                 current_word += current_character
 
+        # Remove all empty strings.
         while "" in words:
             words.remove("")
 
+        # Store the words to this class.
         self.words = words
 
+        # Store the count as the length of the list.
         self.word_count = len(words)
         return self.word_count
 
@@ -79,86 +100,122 @@ class DaleChallCalculator(object):
         current_sentence = ""
         sentences = []
 
+        # Iterate through all of the characters and construct the sentence manually.
         while len(characters) > 0:
+
+            # Grab the current character.
             current_character = characters.pop(0)
 
+            # If the current character is a sentence ending punctiation, push the current
+            # sentence to the list of sentences and reset.
             if current_character in "!?.":
                 sentences.append(current_sentence + current_character)
                 current_sentence = ""
             else:
+
+                # Skip this character if it's a newline character.
                 if current_character == "\n":
                     continue
+
+                # Skip this character if we have empty strings for both the sentence
+                # and character. This prevents adding spaces to the beginning of sentences.
                 elif current_sentence == "" and current_character == " ":
                     continue
-
+                
+                # Add the character to the current sentence.
                 current_sentence += current_character
         
+        # Store the sentences and sentence count to this class.
         self.sentence_count = len(sentences)
         self.sentences = sentences
         return sentences
 
-    def get_easy_words(self):
-        easy = []
-        difficult = []
-        new = []
+    def is_easy_word(self, word=""):
+        """Determine whether a word is considered 'easy'."""
+        possible_endings = ["s", "ies", "ing", "n", "ed", "ied", "ly", "er", "ier", "est", "iest"]
 
-        endings = ["s", "ies", "ing", "n", "ed", "ied", "ly", "er", "ier", "est", "iest"]
-
-        for word in self.words:
-            if word.lower() in self.corpus:
-                easy.append(word)
-            elif word.isdigit():
-                easy.append(word)
-            elif word in easy:
-                easy.append(word)
-            elif word in new:
-                easy.append(word)
-                new.remove(word)
-            elif "-" in word:
-                temp = word.lower().split("-")
-                easy_hyphen = list(map(lambda a: a in self.corpus, temp))
-                if (reduce(lambda a, b: a and b, easy_hyphen)):
-                    easy.append(word)
-            else:
-                for ending in endings:
-                    if word.endswith(ending):
-                        if word[:(-1*len(ending))] in self.corpus:
-                            easy.append(word)
-                        else:
-                            continue
-                    else:
-                        continue
-                difficult.append(word)
-                new.append(word)
-
+        # Grab all of the first words of a sentence.
         word_matrix = list(map(lambda a: a.split(" "), self.sentences))
         first_words = list(map(lambda a: a[0], word_matrix))
 
-        for word in difficult:
-            if word[0] in ascii_uppercase:
-                lower_word = word.lower()
+        # Is the word in the Dale Chall familiar words list?
+        if word.lower() in self.corpus:
+            return True
 
-                if lower_word in easy or lower_word in easy:
-                    continue
-
-                elif word in first_words:
-                    if word in self.scrabble_words:
-                        continue
-
-                easy.append(word)
-                difficult.remove(word)
+        # Is the word actually a number?
+        elif word.isdigit():
+            return True
         
+        # Is there a hyphen in the word?
+        elif "-" in word:
+
+            # Break up the word and see if its components are also easy words.
+            split_word = word.lower().split("-")
+            return reduce(lambda a, b: a and b, map(self.is_easy_word, split_word))
+        
+        # Is the first letter a capital letter?
+        elif word[0] in ascii_uppercase:
+            lower_word = word.lower()
+
+            # Is the word not the start of a sentence and not a common noun?
+            # This is determined by reading the Scrabble list.
+            return lower_word not in first_words or lower_word not in self.scrabble_words
+        
+        # Does the word have any of the applicable endings?
+        else:
+            for ending in possible_endings:
+
+                # Check if the word, without its ending, is in the familiar list.
+                if word.endswith(ending):
+                    return word[:(-1*len(ending))] in self.corpus
+        
+        # If all else fails, return that the word isn't easy.
+        return False
+
+    def get_easy_words(self):
+        """Determine which words are easy and which words are difficult."""
+        easy = [word for word in self.words if self.is_easy_word(word)]
+        difficult = [word for word in self.words if not self.is_easy_word(word)]
+
+        # Check over the difficult words and see if any have repeated before.
+        for word in difficult:
+
+            # If this word is already not in the easy list, check if this word repeats multiple
+            # times.
+            if word not in easy:
+
+                # Get all instances of this word.
+                all_word_instances = [w for w in self.words if w.lower() == word.lower()]
+
+                # If there is more than one occurrence of this word, add all but one of the instances
+                # of this word to the easy list.
+                if len(all_word_instances) > 1:
+                    add_to_easy = all_word_instances[1:]
+                    easy += all_word_instances
+                
+                    for w in add_to_easy:
+                        difficult.remove(w)
+                    
+                    # Finally, add back the first instance of this word.
+                    difficult.append(all_word_instances[0])
+                    if all_word_instances[0] in easy:
+                        easy.remove(all_word_instances[0])
+        
+        # Store the word count into the class.
         self.easy_words = len(easy)
         self.difficult_words = len(difficult)
         
         return easy, difficult
 
     def run_calculation(self):
+        """Based off of the word counts, calculate the Dale Chall score."""
         self.percentage = (float(self.difficult_words) / float(self.word_count)) * 100
         self.score = (0.0496 * self.asl) + (0.1579 * self.percentage) + 3.6365
         return self.score
     
     def calculate(self):
+        """Create a dictionary and start writing test results, performing the
+        necessary calculations."""
         results = {}
         results['stats'] = {}
         results['data'] = {}
