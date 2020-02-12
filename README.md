@@ -14,3 +14,8 @@ In the Terminal, run `dale.py` with any of the following arguments:
 ## License
 
 Dale.py is licensed under the Mozilla Public License 2.0.
+
+## Credits
+
+- The Dale Chall familiar words list can be found here: https://natomasunified.org/als/content/uploads/sites/13/2013/10/High-Frequency-Words.pdf
+- The Scrabble Tournament list used can be found here: https://scrabutility.com/TWL06.txt
