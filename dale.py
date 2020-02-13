@@ -98,7 +98,11 @@ class DaleChallCalculator(object):
         characters = list(self.text)
         current_character = ""
         current_sentence = ""
+        possible_sentence_end = False
         sentences = []
+        honorifics = ["Dr.", "Esq.", "Hon.", "Jr.", "Mr.", "Mrs.", "Ms.",
+                      "Messrs.", "Mmes.", "Msgr.", "Prof.", "Rev.", "Rt.",
+                      "Hon.", "Sr.", "St."]
 
         # Iterate through all of the characters and construct the sentence manually.
         while len(characters) > 0:
@@ -106,19 +110,28 @@ class DaleChallCalculator(object):
             # Grab the current character.
             current_character = characters.pop(0)
 
-            # If the current character is a sentence ending punctiation, push the current
-            # sentence to the list of sentences and reset.
-            if current_character in "!?.":
-                current_sentence += current_character
-                
-                # Grab the next character without popping it off the list.
-                next_char = characters[0]
+            # If we think we've reached a sentence end, check if the sentence isn't ending
+            # on an honorific (titles). If we are, just keep going. Otherwise, push the
+            # sentence onto the list of sentences.
+            if possible_sentence_end:
+                if current_character == " ":
+                    split_sentence = current_sentence.split(" ")
+                    last_word = split_sentence[-1:][0]
 
-                # If the next character is a space, push the sentence along to the sentence
-                # list.
-                if next_char == " ":
-                    sentences.append(current_sentence + current_character)
-                    current_sentence = ""
+                    if last_word in honorifics:
+                        current_sentence += current_character
+                    else:
+                        sentences.append(current_sentence)
+                        current_sentence = ""
+
+                    possible_sentence_end = False
+
+            # If we find punctionation that typically ends sentences, mark that we might be
+            # at the end of a sentence.
+            elif current_character in "!?.":
+                possible_sentence_end = True
+                current_sentence += current_character
+            
             else:
 
                 # Skip this character if it's a newline character.
@@ -132,6 +145,11 @@ class DaleChallCalculator(object):
                 
                 # Add the character to the current sentence.
                 current_sentence += current_character
+
+        # If we were at the possible end of the sentence when we arrived on the last character
+        # of the text, push what the sentence was as a sentence.
+        if possible_sentence_end:
+            sentences.append(current_sentence)
         
         # Store the sentences and sentence count to this class.
         self.sentence_count = len(sentences)
@@ -244,7 +262,7 @@ def create_arguments():
     parser = argparse.ArgumentParser()
     parser.description = "Calculate an approximate Dale-Chall readability score."
     parser.add_argument("-i", "--input", help="The input file to read from.")
-    parser.add_argument("-e", "--export-data", nargs="*", default=False, help="Whether to export the data properties to a JSON file.")
+    parser.add_argument("-e", "--export-data", nargs="*", default="result", help="The path to the JSON file containing the results.")
     return parser
 
 # Start main execution here if run directly.
@@ -279,5 +297,5 @@ if __name__ == "__main__":
 
     # Make the JSON data file if requested.
     if args.export_data:
-        with open(args.export_data or 'result.json', 'w+') as out:
+        with open(args.export_data[0], 'w+') as out:
             out.writelines(json.dumps(result, indent=4, ensure_ascii=False))
