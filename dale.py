@@ -109,8 +109,16 @@ class DaleChallCalculator(object):
             # If the current character is a sentence ending punctiation, push the current
             # sentence to the list of sentences and reset.
             if current_character in "!?.":
-                sentences.append(current_sentence + current_character)
-                current_sentence = ""
+                current_sentence += current_character
+                
+                # Grab the next character without popping it off the list.
+                next_char = characters[0]
+
+                # If the next character is a space, push the sentence along to the sentence
+                # list.
+                if next_char == " ":
+                    sentences.append(current_sentence + current_character)
+                    current_sentence = ""
             else:
 
                 # Skip this character if it's a newline character.
@@ -271,5 +279,5 @@ if __name__ == "__main__":
 
     # Make the JSON data file if requested.
     if args.export_data:
-        with open('result.json', 'w+') as out:
+        with open(args.export_data or 'result.json', 'w+') as out:
             out.writelines(json.dumps(result, indent=4, ensure_ascii=False))
