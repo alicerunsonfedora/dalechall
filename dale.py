@@ -31,7 +31,7 @@ def get_scrabble():
 class DaleChallCalculator(object):
     """The primary class responsible for calculating the readability score of
     a given text."""
-    
+
     def __init__(self):
         self.text = ""
         self.word_count = 0
@@ -54,7 +54,7 @@ class DaleChallCalculator(object):
         if self.sentence_count == 0 and self.word_count == 0:
             self.get_sentence_count()
             self.get_word_count()
-        
+
         # Store the ASL in our class
         self.asl = self.word_count / self.sentence_count
         return self.asl
@@ -131,7 +131,7 @@ class DaleChallCalculator(object):
             elif current_character in "!?.":
                 possible_sentence_end = True
                 current_sentence += current_character
-            
+
             else:
 
                 # Skip this character if it's a newline character.
@@ -142,7 +142,7 @@ class DaleChallCalculator(object):
                 # and character. This prevents adding spaces to the beginning of sentences.
                 elif current_sentence == "" and current_character == " ":
                     continue
-                
+
                 # Add the character to the current sentence.
                 current_sentence += current_character
 
@@ -150,7 +150,7 @@ class DaleChallCalculator(object):
         # of the text, push what the sentence was as a sentence.
         if possible_sentence_end:
             sentences.append(current_sentence)
-        
+
         # Store the sentences and sentence count to this class.
         self.sentence_count = len(sentences)
         self.sentences = sentences
@@ -171,22 +171,23 @@ class DaleChallCalculator(object):
         # Is the word actually a number?
         elif word.isdigit():
             return True
-        
+
         # Is there a hyphen in the word?
         elif "-" in word:
 
             # Break up the word and see if its components are also easy words.
             split_word = word.lower().split("-")
             return reduce(lambda a, b: a and b, map(self.is_easy_word, split_word))
-        
+
         # Is the first letter a capital letter?
         elif word[0] in ascii_uppercase:
             lower_word = word.lower()
 
-            # Is the word not the start of a sentence and not a common noun?
-            # This is determined by reading the Scrabble list.
-            return lower_word not in first_words or lower_word not in self.scrabble_words
-        
+            if lower_word in first_words:
+                return lower_word not in self.scrabble_words
+            else:
+                return lower_word not in self.scrabble_words
+
         # Does the word have any of the applicable endings?
         else:
             for ending in possible_endings:
@@ -194,7 +195,7 @@ class DaleChallCalculator(object):
                 # Check if the word, without its ending, is in the familiar list.
                 if word.endswith(ending):
                     return word[:(-1*len(ending))] in self.corpus
-        
+
         # If all else fails, return that the word isn't easy.
         return False
 
@@ -203,12 +204,14 @@ class DaleChallCalculator(object):
         easy = [word for word in self.words if self.is_easy_word(word)]
         difficult = [word for word in self.words if not self.is_easy_word(word)]
 
+        processed_words = []
+
         # Check over the difficult words and see if any have repeated before.
         for word in difficult:
 
             # If this word is already not in the easy list, check if this word repeats multiple
             # times.
-            if word not in easy:
+            if word not in easy and word not in processed_words:
 
                 # Get all instances of this word.
                 all_word_instances = [w for w in self.words if w.lower() == word.lower()]
@@ -218,19 +221,22 @@ class DaleChallCalculator(object):
                 if len(all_word_instances) > 1:
                     add_to_easy = all_word_instances[1:]
                     easy += all_word_instances
-                
+
+                    print(add_to_easy)
                     for w in add_to_easy:
                         difficult.remove(w)
-                    
+
                     # Finally, add back the first instance of this word.
                     difficult.append(all_word_instances[0])
                     if all_word_instances[0] in easy:
                         easy.remove(all_word_instances[0])
-        
+
+                    processed_words.append(word)
+
         # Store the word count into the class.
         self.easy_words = len(easy)
         self.difficult_words = len(difficult)
-        
+
         return easy, difficult
 
     def run_calculation(self):
@@ -238,7 +244,7 @@ class DaleChallCalculator(object):
         self.percentage = (float(self.difficult_words) / float(self.word_count)) * 100
         self.score = (0.0496 * self.asl) + (0.1579 * self.percentage) + 3.6365
         return self.score
-    
+
     def calculate(self):
         """Create a dictionary and start writing test results, performing the
         necessary calculations."""
@@ -282,7 +288,7 @@ if __name__ == "__main__":
     # Copy the text input from the file we defined as the input.
     with open(args.input, 'r') as text:
         calc.text = ''.join(text.readlines())
-    
+
     result = calc.calculate()
 
     # Print our test results.
