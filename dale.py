@@ -87,6 +87,9 @@ class DaleChallCalculator(object):
         while "" in words:
             words.remove("")
 
+        while "-" in words:
+            words.remove("-")
+
         # Store the words to this class.
         self.words = words
 
@@ -156,9 +159,10 @@ class DaleChallCalculator(object):
         self.sentences = sentences
         return sentences
 
-    def is_easy_word(self, word=""):
+    def is_easy_word(self, word):
         """Determine whether a word is considered 'easy'."""
         possible_endings = ["s", "ies", "ing", "n", "ed", "ied", "ly", "er", "ier", "est", "iest"]
+        print(word)
 
         # Grab all of the first words of a sentence.
         word_matrix = list(map(lambda a: a.split(" "), self.sentences))
